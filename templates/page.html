@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes MQTT</title>
+    <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0f7fa; /* Azul claro */
+            color: #01579b; /* Azul oscuro */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        #messages {
+            background-color: #ffffff;
+            border: 2px solid #0288d1;
+            border-radius: 8px;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            border: 1px solid #0288d1;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #01579b;
+        }
+    </style>
+    <script>
+        // Crear el cliente MQTT
+        var client = mqtt.connect('ws://test.mosquitto.org:8080');  // WebSocket MQTT para navegador
+
+        // Tema al que nos vamos a suscribir
+        var topic = 'test/topic';
+
+        // Cuando se conecta el cliente MQTT
+        client.on('connect', function () {
+            console.log('Conectado al broker MQTT');
+            client.subscribe(topic, function (err) {
+                if (!err) {
+                    console.log('Suscrito al tema:', topic);
+                }
+            });
+        });
+
+        // Escuchar mensajes
+        client.on('message', function (topic, message) {
+            document.getElementById('messages').innerHTML = 'Mensaje recibido: ' + message.toString();
+        });
+
+        // Función para enviar mensajes
+        function sendMessage() {
+            var message = document.getElementById('messageInput').value;  
+            if (message) {
+                client.publish(topic, message);  
+                console.log("Mensaje enviado: " + message);
+                document.getElementById('messageInput').value = '';  
+            } else {
+                alert("Escribe un mensaje antes de enviar.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Bienvenido, esta es una aplicación MQTT</h1>
+    <h3>Ingrese un mensaje para enviarlo</h3>
+    <div id="messages">No hay mensajes aún...</div>
+    <div>
+        <input type="text" id="messageInput" placeholder="Escribe tu mensaje aquí..." />
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+</body>
+</html>
+
