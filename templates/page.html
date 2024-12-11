@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mensajes MQTT</title>
     <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,38 +66,44 @@
         }
     </style>
     <script>
-        // Crear el cliente MQTT
-        var client = mqtt.connect('ws://test.mosquitto.org:8080');  // WebSocket MQTT para navegador
+        // Crear el cliente SocketIO para recibir mensajes desde Flask
+        var socket = io.connect(window.location.href);
 
-        // Tema al que nos vamos a suscribir
-        var topic = 'test/topic';
-
-        // Cuando se conecta el cliente MQTT
-        client.on('connect', function () {
-            console.log('Conectado al broker MQTT');
-            client.subscribe(topic, function (err) {
-                if (!err) {
-                    console.log('Suscrito al tema:', topic);
-                }
-            });
+        // Escuchar el evento 'mqtt_message' enviado desde el servidor Flask
+        socket.on('mqtt_message', function(data) {
+            document.getElementById('messages').innerHTML = 'Mensaje recibido: ' + data.message;
         });
 
-        // Escuchar mensajes
-        client.on('message', function (topic, message) {
-            document.getElementById('messages').innerHTML = 'Mensaje recibido: ' + message.toString();
-        });
-
-        // Función para enviar mensajes
+        // Función para enviar mensajes MQTT
         function sendMessage() {
             var message = document.getElementById('messageInput').value;  
             if (message) {
-                client.publish(topic, message);  
+                // Enviar mensaje MQTT a través de WebSocket MQTT
+                client.publish('test/topic', message);  
                 console.log("Mensaje enviado: " + message);
-                document.getElementById('messageInput').value = '';  
+                document.getElementById('messageInput').value = '';  // Limpiar el campo de texto
             } else {
                 alert("Escribe un mensaje antes de enviar.");
             }
         }
+
+        // Crear el cliente MQTT para navegador
+        var client = mqtt.connect('ws://test.mosquitto.org:8080');  // WebSocket MQTT
+
+        // Suscribirse al tema
+        client.on('connect', function () {
+            console.log('Conectado al broker MQTT');
+            client.subscribe('test/topic', function (err) {
+                if (!err) {
+                    console.log('Suscrito al tema: test/topic');
+                }
+            });
+        });
+
+        // Escuchar los mensajes MQTT
+        client.on('message', function (topic, message) {
+            document.getElementById('messages').innerHTML = 'Mensaje recibido: ' + message.toString();
+        });
     </script>
 </head>
 <body>
@@ -109,4 +116,3 @@
     </div>
 </body>
 </html>
-
