@@ -5,30 +5,38 @@ from flask_socketio import SocketIO
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-def on_connect(client, userdata, flags, rc):
+# Callback cuando el cliente se conecta al broker MQTT
+def on_connect(client, userdata, flags, rc, properties=None):
     print(f"Conectado al broker con código {rc}")
-    client.subscribe("test/topic")   # Suscripción al tema
+    client.subscribe("test/topic")  # Nos suscribimos al tema "test/topic"
 
+# Callback cuando se recibe un mensaje en el tema MQTT
 def on_message(client, userdata, msg):
     print(f"Mensaje recibido en el tema {msg.topic}: {msg.payload.decode()}")
-    socketio.emit('mqtt_message', {'message': msg.payload.decode()})  # Emitir mensaje a través de SocketIO
+    # Emitimos el mensaje a través de SocketIO para que lo reciba el cliente
+    socketio.emit('mqtt_message', {'message': msg.payload.decode()})
 
-webpage = mqtt.Client()
+# Usamos MQTT 5.0 para evitar el warning de deprecación
+webpage = mqtt.Client(protocol=mqtt.MQTTv5)  # Actualizamos el cliente para usar MQTTv5
 
+# Asignamos las funciones de callback
 webpage.on_connect = on_connect
 webpage.on_message = on_message
 
-# Conectar al broker MQTT
+# Nos conectamos al broker MQTT
 webpage.connect("test.mosquitto.org", 1883, 60)
 
-webpage.loop_start()  # Iniciar el loop para recibir mensajes MQTT
+# Iniciamos el loop del cliente MQTT en un hilo para no bloquear el servidor Flask
+webpage.loop_start()
 
 @app.route('/')
 def page():
-    return render_template('page.html')  # Renderizar el archivo HTML
+    return render_template('page.html')  # Asegúrate de que este archivo esté en la carpeta templates
 
 if __name__ == '__main__':
     print("Iniciando el servidor Flask...")
-    socketio.run(app, host='0.0.0.0', port=3000)  # Ejecutar Flask con SocketIO
+    socketio.run(app, host='0.0.0.0', port=3000)
+
+
 
 
